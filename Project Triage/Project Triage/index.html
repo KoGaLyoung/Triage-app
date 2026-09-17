@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#0a0a0b">
+  <title>急診預檢分流系統 — TTAS Pre-ER Triage</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- QRCode.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <!-- App CSS -->
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- Progress Bar -->
+  <div class="progress-bar" style="position: fixed; top: 0; left: 0; right: 0; z-index: 50;">
+    <div class="progress-fill" style="width: 0%;"></div>
+  </div>
+
+  <!-- Step Indicator -->
+  <div style="max-width: 480px; margin: 0 auto; padding: 12px 16px 0;">
+    <div class="step-indicator">
+      <div class="step-dot active" data-step="1"></div>
+      <div class="step-dot" data-step="2"></div>
+      <div class="step-dot" data-step="3"></div>
+      <div class="step-dot" data-step="4"></div>
+      <div class="step-dot" data-step="5"></div>
+      <span class="step-label">STEP</span>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       STEP 1: Legal Disclaimer & Red-Flag Override
+       ════════════════════════════════════════════ -->
+  <div id="step1" class="screen active">
+    <div class="animate-up">
+      <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <span style="font-size: 1.5rem;">🏥</span>
+        <h1 style="margin: 0;">急診預檢分流系統</h1>
+      </div>
+      <p class="subtitle">TTAS 台灣急診檢傷急迫度分級量表<br>Pre-ER Triage & Self-Diversion System</p>
+    </div>
+
+    <!-- Emergency Red-Flag Override -->
+    <div class="alert-banner alert-red animate-up animate-delay-1" style="margin-top: 24px;">
+      <span class="alert-icon">🚨</span>
+      <h3 style="color: var(--level1-text); margin-bottom: 8px;">如果您目前有以下狀況，請立即撥打 119</h3>
+      <ul style="padding-left: 18px; color: var(--text-secondary); font-size: 0.8125rem; line-height: 1.8;">
+        <li>心臟停止、無意識</li>
+        <li>嚴重窒息、無法呼吸</li>
+        <li>大量噴血</li>
+        <li>突發性胸口劇痛合併冒冷汗</li>
+        <li>嚴重過敏反應（呼吸困難、全身腫脹）</li>
+      </ul>
+      <a href="tel:119" class="emergency-btn" id="emergency-call-btn" style="margin-top: 16px;">
+        📞 立即撥打 119
+      </a>
+    </div>
+
+    <!-- Disclaimer Checkbox -->
+    <div class="checkbox-group animate-up animate-delay-2" id="disclaimer-check" style="margin-top: 24px;">
+      <div class="checkbox-box"></div>
+      <div class="checkbox-text">
+        我已詳閱並同意本預檢僅供就醫急迫性分流參考，<strong>非最終醫師診斷</strong>。實際醫療處置仍需由合格醫師評估決定。
+      </div>
+    </div>
+
+    <button class="btn btn-primary animate-up animate-delay-3" id="step1-next" disabled style="margin-top: 24px;">
+      開始評估 →
+    </button>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       STEP 2: Basic Info & Age Group
+       ════════════════════════════════════════════ -->
+  <div id="step2" class="screen">
+    <h2>📋 基本資料</h2>
+    <p class="subtitle" style="margin-bottom: 24px;">請選擇年齡類別並填寫基本資料</p>
+
+    <!-- Age Group -->
+    <div class="input-label">年齡類別</div>
+    <div class="bento-grid" style="margin-bottom: 24px;">
+      <div class="bento-card age-card" data-age="adult">
+        <span class="card-icon">👤</span>
+        <span class="card-title">成人</span>
+        <span class="card-desc">≥ 18 歲</span>
+      </div>
+      <div class="bento-card age-card" data-age="pediatric">
+        <span class="card-icon">👶</span>
+        <span class="card-title">兒童</span>
+        <span class="card-desc">< 18 歲</span>
+      </div>
+    </div>
+
+    <!-- Pediatric sub-age selector -->
+    <div id="peds-age-sub" style="display: none; margin-bottom: 24px;">
+      <div class="input-label">兒童年齡細分</div>
+      <div class="bento-grid">
+        <div class="bento-card infant-age-card" data-age="under_3m">
+          <span class="card-icon">🍼</span>
+          <span class="card-title">< 3 個月</span>
+          <span class="card-desc">新生兒/嬰兒</span>
+        </div>
+        <div class="bento-card infant-age-card" data-age="3m_3y">
+          <span class="card-icon">🧒</span>
+          <span class="card-title">3 個月 - 3 歲</span>
+          <span class="card-desc">幼兒</span>
+        </div>
+        <div class="bento-card infant-age-card full-width" data-age="over_3y">
+          <span class="card-icon">🧒</span>
+          <span class="card-title">3 歲以上</span>
+          <span class="card-desc">學齡兒童/青少年</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Pregnancy Toggle -->
+    <div id="pregnancy-row" style="margin-bottom: 24px;">
+      <div class="toggle-row" id="pregnancy-toggle">
+        <span class="toggle-label">🤰 懷孕</span>
+        <div class="toggle-switch"></div>
+      </div>
+      <div class="text-xs" style="margin-top: 4px; padding-left: 4px;">懷孕者外傷時，TTAS 原始判定級數上調一級</div>
+    </div>
+
+    <!-- Patient Info -->
+    <div class="input-group">
+      <label class="input-label">姓名代碼（如：陳*明 → 填「陳」）</label>
+      <input type="text" class="input-field" id="patient-name" placeholder="例：陳" maxlength="4">
+      <div class="input-hint">僅需填寫姓氏或名字首字，系統將以代碼顯示</div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">身分證末四碼</label>
+      <input type="tel" class="input-field" id="patient-id" placeholder="例：5678" maxlength="4" inputmode="numeric">
+      <div class="input-hint">僅需輸入數字，用於辨識您的評估憑證</div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="step2-back">← 返回</button>
+      <button class="btn btn-primary" id="step2-next" disabled>下一步 →</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       STEP 3: Chief Complaint Bento Grid
+       ════════════════════════════════════════════ -->
+  <div id="step3" class="screen">
+    <h2>🩺 主訴選擇</h2>
+    <p class="subtitle" style="margin-bottom: 24px;">點選最符合目前症狀的選項</p>
+
+    <div class="bento-grid single-col" id="chief-complaint-grid">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="btn-row" style="margin-top: 16px;">
+      <button class="btn btn-ghost" id="step3-back">← 返回</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       STEP 4: Dynamic Questioning
+       ════════════════════════════════════════════ -->
+  <div id="step4" class="screen">
+    <h2>💬 動態問診</h2>
+    <p class="subtitle" style="margin-bottom: 16px;">根據您的症狀進行進一步評估</p>
+
+    <div id="question-container">
+      <!-- Populated by JS -->
+    </div>
+
+    <div class="btn-row" style="margin-top: 16px;">
+      <button class="btn btn-ghost" id="step4-back">← 返回主訴選擇</button>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════════════════
+       STEP 5: Triage Certificate & Safety Net
+       ════════════════════════════════════════════ -->
+  <div id="step5" class="screen">
+    <h2>📄 檢傷結果與認證憑證</h2>
+
+    <div id="certificate-container">
+      <!-- Populated by JS -->
+    </div>
+  </div>
+
+</div>
+
+<!-- App Scripts (order matters) -->
+<script src="js/ttas_engine.js"></script>
+<script src="js/questions_data.js"></script>
+<script src="js/components/wheel_picker.js"></script>
+<script src="js/app.js"></script>
+
+</body>
+</html>
